@@ -1,12 +1,12 @@
 {
     "version": "1.0.0",
     "summary": "Simulate physical systems changing over time",
-    "repository": "https://github.com/nphollon/time-evolution.git",
+    "repository": "https://github.com/nphollon/mechanics.git",
     "license": "MIT",
     "source-directories": [
-        "."
+        "src"
     ],
-    "exposed-modules": [ "Mechanics" ],
+    "exposed-modules": [ "TimeEvolution" ],
     "dependencies": {
         "elm-lang/core": "2.0.0 <= v < 3.0.0"
     },
