@@ -3,10 +3,9 @@ module TimeEvolution (Laws, Externals, limit, evolve) where
 {-| Evolve a system continuously through time. This module does not know any
 physics. You provide it the physical laws, and it updates your state for you.
 
-This module uses the [Runge-Kutta method]
-(https://en.wikipedia.org/wiki/Runge-Kutta_methods),
-which is much more accurate than the free & easy [Euler method]
-(https://en.wikipedia.org/wiki/Euler_method).
+`evolve` uses the [Runge-Kutta method](https://en.wikipedia.org/wiki/Runge-Kutta_methods),
+which is much more accurate than the simpler
+[Euler method](https://en.wikipedia.org/wiki/Euler_method).
 
 @docs Laws, Externals, limit, evolve
 
@@ -19,11 +18,12 @@ import Time exposing (Time)
 
 {-| Laws describes the behavior of the system.
 
-The model is a collection of `Floats` that change continuously over time. This
-includes things like position and velocity. 
+The model contains all of the data that needs to be updated. The values will
+change continuously over time, so this should be a collection of `Float`s.
+For example, the model might include things like position and velocity. 
 
-The environment contains information that does not need to be updated by this
-library. It might include constants (such as gravitational strength) or data
+The environment contains information that is not controlled by `evolve`.
+It might include constants (such as gravitational strength) or data
 controlled by the user (such as acceleration).
 
 * add: Add the corresponding elements of one model to another
@@ -47,8 +47,8 @@ Note that `force` is not the same as the update function you normally pass to
           , momentum = f * state.momentum
           }
       , force env state =
-          { position = state.momentum / env.mass
-          , momentum = state.force
+          { position = state.momentum / env.mass -- Change in position
+          , momentum = state.force -- Change in momentum
           }
 -}
 type alias Laws model environment =
