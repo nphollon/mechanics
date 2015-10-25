@@ -16,6 +16,7 @@ import List
 import Signal exposing (Signal)
 import Time exposing (Time)
 
+
 {-| Laws describes the behavior of the system.
 
 The model is a collection of `Floats` that change continuously over time. This
