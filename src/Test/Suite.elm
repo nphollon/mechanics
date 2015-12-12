@@ -29,6 +29,16 @@ all =
                         (Sum [ Constant 7, LiteralFunction "a" ])
                         (evalAt 2 (Sum [ Parameter, LiteralFunction "a", Constant 5 ]))
 
+          , test "a + b + 0 = a + b"
+                   <| assertEqual
+                        (Sum [ LiteralFunction "a", LiteralFunction "b" ])
+                        (evalAt 0 (Sum [ Parameter, LiteralFunction "a", LiteralFunction "b" ]))
+
+          , test "a + 0 = a"
+                   <| assertEqual
+                        (LiteralFunction "c")
+                        (evalAt 1 (Sum [ Parameter, LiteralFunction "c", Constant -1 ]))
+
           , test "Multiplying a constant and a parameter"
                    <| (evalAt 3 (Product [ Parameter, Constant 4 ]))
                         `is` 12
@@ -47,6 +57,11 @@ all =
                    <| (evalAt 2 (Power Parameter (Constant 4)))
                         `is` 16
 
+          , test "a(t)^1 = a(t)"
+                   <| assertEqual
+                        (LiteralFunction "a")
+                        (evalAt 3 (Power (LiteralFunction "a") (Constant 1)))
+
           , test "Taking a logarithm of a parameter"
                    <| (evalAt e (Log Parameter))
                         `is` 1
@@ -60,8 +75,6 @@ all =
                         `is` (cos 2)
           ]
 {-
-sum [0, a, b] = sum [a, b]
-sum [a] = a
 product [1, a, b] = product [a, b]
 product [0, a, b] = 0
 product [a] = a

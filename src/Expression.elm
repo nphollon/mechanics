@@ -64,6 +64,8 @@ evalAt t expr =
       case (evalAt t base, evalAt t exponent) of
         (Constant x, Constant y) ->
           Constant (x ^ y)
+        (a, Constant 1) ->
+          a
         (a, b) ->
           Power a b
 
@@ -104,11 +106,21 @@ sum terms =
     (finalTotal, allAbstracts) =
       List.foldr partition (0, []) terms
 
+    reducedTerms =
+      if finalTotal == 0 then
+        allAbstracts
+      else
+        ((Constant finalTotal) :: allAbstracts)
   in
-    if (List.isEmpty allAbstracts) then
-      Constant finalTotal
-    else
-      Sum ((Constant finalTotal) :: allAbstracts)
+    case reducedTerms of
+      [] ->
+        Constant 0
+                 
+      [ singleton ] ->
+        singleton
+        
+      list ->
+        Sum list
 
 
 product : List Expression -> Expression
