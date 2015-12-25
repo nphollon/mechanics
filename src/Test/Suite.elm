@@ -53,6 +53,16 @@ all =
                         (Product [ Constant 10, LiteralFunction "a" ])
                         (evalAt 2 (Product [ Parameter, LiteralFunction "a", Constant 5 ]))
 
+          , test "a * 0 = 0"
+                   <| assertEqual
+                        (Constant 0)
+                        (evalAt 2 (Product [ LiteralFunction "a", Constant 0 ]))
+
+          , test "a * 1 = a"
+                   <| assertEqual
+                        (LiteralFunction "a")
+                        (evalAt 2 (Product [ LiteralFunction "a", Constant 1 ]))
+
           , test "Raising a parameter to a power"
                    <| (evalAt 2 (Power Parameter (Constant 4)))
                         `is` 16

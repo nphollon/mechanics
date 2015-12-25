@@ -12,39 +12,8 @@ type Expression =
     | Cos Expression
 
 -- Useful extensions: Quotient, Difference, Pi, Exp
-      
-evalAtt : Float -> Expression -> Float
-evalAtt t expr =
-  case expr of
-    
-    Parameter ->
-      t
-      
-    Constant c ->
-      c
-      
-    Sum terms ->
-      List.map (evalAtt t) terms
-        |> List.sum
 
-    Product factors ->
-      List.map (evalAtt t) factors
-        |> List.product
 
-    Power base exponent ->
-      (evalAtt t base) ^ (evalAtt t exponent)
-
-    Log arg ->
-      logBase e (evalAtt t arg)
-
-    Sin arg ->
-      sin (evalAtt t arg)
-
-    Cos arg ->
-      cos (evalAtt t arg)
-
-    _ -> t
-      
 evalAt : Float -> Expression -> Expression
 evalAt t expr =
   case expr of
@@ -90,8 +59,8 @@ evalAt t expr =
         a ->
           Cos a
 
-    _ -> expr {-
--}
+    _ -> expr
+
 
 sum : List Expression -> Expression
 sum terms =
@@ -136,11 +105,23 @@ product factors =
     (finalTotal, allAbstracts) =
       List.foldr partition (1, []) factors
 
+    reducedTerms =
+      if finalTotal == 0 then
+        [ Constant 0 ]
+      else if finalTotal == 1 then
+        allAbstracts
+      else
+        (Constant finalTotal) :: allAbstracts
   in
-    if (List.isEmpty allAbstracts) then
-      Constant finalTotal
-    else
-      Product ((Constant finalTotal) :: allAbstracts)
+    case reducedTerms of
+      [] ->
+        Constant 1
+
+      [ singleton ] ->
+        singleton
+
+      list ->
+        Product list
 
               
 {-
