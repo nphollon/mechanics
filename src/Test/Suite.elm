@@ -83,14 +83,24 @@ all =
           , test "Cosine of a parameter"
                    <| (evalAt 2 (Cos Parameter))
                         `is` (cos 2)
+
+          , test "Replacing a function literal with an expression"
+                   <| assertEqual
+                        (Cos Parameter)
+                        (replaceLiteral "a" (Cos Parameter) (LiteralFunction "a"))
+
+          , test "Replace all instances of a literal"
+                   <| assertEqual
+                        (Sum [ Sin Parameter, Cos Parameter ])
+                        (replaceLiteral "a" Parameter
+                         (Sum [ Sin (LiteralFunction "a"), Cos (LiteralFunction "a") ]))
+
+          , test "Only replace literals with correct name"
+                   <| assertEqual
+                        (Power (LiteralFunction "base") (Constant 3))
+                        (replaceLiteral "exp" (Constant 3)
+                         (Power (LiteralFunction "base") (LiteralFunction "exp")))
           ]
-{-
-product [1, a, b] = product [a, b]
-product [0, a, b] = 0
-product [a] = a
-power a 1 = a
-power a 0 = 1
--}
 
 {-
 This is written so that if the assertion fails, the output will

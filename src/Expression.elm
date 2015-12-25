@@ -124,8 +124,40 @@ product factors =
         Product list
 
               
-{-
 replaceLiteral : String -> Expression -> Expression -> Expression
+replaceLiteral name sub expr =
+  let
+    recurse =
+      replaceLiteral name sub
+  in
+    case expr of
+      LiteralFunction f ->
+        if name == f then
+          sub
+        else
+          LiteralFunction f
 
+      Sum terms ->
+        Sum (List.map recurse terms)
+
+      Product factors ->
+        Product (List.map recurse factors)
+
+      Power base exponent ->
+        Power (recurse base) (recurse exponent)
+
+      Log a ->
+        Log (recurse a)
+
+      Sin a ->
+        Sin (recurse a)
+
+      Cos a ->
+        Cos (recurse a)
+
+      constant ->
+        constant
+                 
+{-
 try : (Float -> Float) -> Expression -> Expression
 -}
