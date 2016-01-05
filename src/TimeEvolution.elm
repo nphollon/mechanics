@@ -40,7 +40,7 @@ Note that `force` is not the same as the update function you normally pass to
           { position = f * state.position
           , momentum = f * state.momentum
           }
-      , force env state =
+      , force state =
           { position = state.momentum / mass -- Change in position
           , momentum = gravity -- Change in momentum
           }
