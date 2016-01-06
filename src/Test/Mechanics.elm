@@ -1,10 +1,10 @@
-module Test.Lagrangian where
+module Test.Mechanics where
 
 import Array
 
 import ElmTest exposing (..)
 
-import Lagrangian as Mech
+import Mechanics as Mech
 
 all : Test
 all =
