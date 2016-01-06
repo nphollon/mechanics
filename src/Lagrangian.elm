@@ -3,7 +3,6 @@ module Lagrangian (state1, state2, state3, state
                   , evolve, acceleration) where
 
 import Array exposing (Array)
-import TimeEvolution
 
 
 state1 : (Float, Float) -> State
@@ -55,40 +54,53 @@ velocity i state =
 evolve : Acceleration -> Float -> State -> State
 evolve accel dt state =
   let
+    
+    a = force accel state
+    b = a |> scale (0.5 * dt) |> add state |> force accel
+    c = b |> scale (0.5 * dt) |> add state |> force accel
+    d = c |> scale dt |> add state |> force accel
+  in
+    add a d
+      |> add (scale 2 b)
+      |> add (scale 2 c)
+      |> scale (dt / 6)
+      |> add state
+
+
+add : State -> State -> State
+add s1 s2 =
+  let
     tupPlus (a, b) (c, d) =
       (a + c, b + d)
+  in
+    { s1 | coords =
+           List.map2 tupPlus (Array.toList s1.coords) (Array.toList s2.coords)
+             |> Array.fromList
+    }
 
+
+scale : Float -> State -> State
+scale f s =
+  let
     tupTimes f (a, b) =
       (f * a, f * b)
+  in
+    { s | coords =
+          Array.map (tupTimes f) s.coords
+    }
 
+
+force : Acceleration -> State -> State
+force accel s =
+  let
     tupForce a (x, v) =
       (v, a)
-
-    add s1 s2 =
-      { s1 | coords =
-             List.map2 tupPlus (Array.toList s1.coords) (Array.toList s2.coords)
-               |> Array.fromList
-      }
-
-    scale f s =
-      { s | coords =
-             Array.map (tupTimes f) s.coords
-      }
-
-    force s =
-      { s | coords =
-            List.map2 tupForce (accel s) (Array.toList s.coords)
-                |> Array.fromList
-      }
-
-    laws =
-      { add = add
-      , scale = scale
-      , force = force
-      }
   in
-    TimeEvolution.evolve laws (1000 * dt) state
-                 
+    { s | coords =
+          List.map2 tupForce (accel s) (Array.toList s.coords)
+            |> Array.fromList
+    }
+  
 
 acceleration : (State -> List Float) -> Acceleration
 acceleration a =
