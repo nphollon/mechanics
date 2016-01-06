@@ -1,5 +1,6 @@
-module Lagrangian (state1, state2, state3, state
-                  , dimension, time, coordinate, velocity
+module Lagrangian (State, Acceleration
+                  , state1, state2, state3, state
+                  , aboutEqual, dimension, time, coordinate, velocity
                   , evolve, acceleration) where
 
 import Array exposing (Array)
@@ -23,13 +24,29 @@ state3 x y z =
 state : Float -> List (Float, Float) -> State
 state time coords =
   { time = time
-  , coords = Array.fromList coords
+  , coordinates = List.map fst coords
+  , velocities = List.map snd coords
   }
 
 
+aboutEqual : Float -> State -> State -> Bool
+aboutEqual tolerance a b =
+  let
+    eq x y =
+      (x - y)^2 < tolerance^2
+
+    eqAll xs ys =
+      (List.length xs == List.length ys) &&
+      (List.map2 eq xs ys |> List.all identity)
+  in
+    (eq a.time b.time) &&
+    (eqAll a.coordinates b.coordinates) &&
+    (eqAll a.velocities b.velocities)
+    
+  
 dimension : State -> Int
 dimension state =
-  Array.length state.coords
+  List.length state.coordinates
 
 
 time : State -> Float
@@ -39,77 +56,65 @@ time =
 
 coordinate : Int -> State -> Float
 coordinate i state =
-  Array.get i state.coords
-    |> Maybe.map fst
+  Array.fromList state.coordinates
+    |> Array.get i
     |> Maybe.withDefault 0
 
 
 velocity : Int -> State -> Float
 velocity i state =
-  Array.get i state.coords
-    |> Maybe.map snd
+  Array.fromList state.velocities
+    |> Array.get i 
     |> Maybe.withDefault 0
 
-
-evolve : Acceleration -> Float -> State -> State
-evolve accel dt state =
-  let
-    
-    a = force accel state
-    b = a |> scale (0.5 * dt) |> add state |> force accel
-    c = b |> scale (0.5 * dt) |> add state |> force accel
-    d = c |> scale dt |> add state |> force accel
-  in
-    add a d
-      |> add (scale 2 b)
-      |> add (scale 2 c)
-      |> scale (dt / 6)
-      |> add state
-
-
-add : State -> State -> State
-add s1 s2 =
-  let
-    tupPlus (a, b) (c, d) =
-      (a + c, b + d)
-  in
-    { s1 | coords =
-           List.map2 tupPlus (Array.toList s1.coords) (Array.toList s2.coords)
-             |> Array.fromList
-    }
-
-
-scale : Float -> State -> State
-scale f s =
-  let
-    tupTimes f (a, b) =
-      (f * a, f * b)
-  in
-    { s | coords =
-          Array.map (tupTimes f) s.coords
-    }
-
-
-force : Acceleration -> State -> State
-force accel s =
-  let
-    tupForce a (x, v) =
-      (v, a)
-  in
-    { s | coords =
-          List.map2 tupForce (accel s) (Array.toList s.coords)
-            |> Array.fromList
-    }
-  
 
 acceleration : (State -> List Float) -> Acceleration
 acceleration a =
   a
 
   
+evolve : Acceleration -> Float -> State -> State
+evolve accel dt state =
+  let
+    a = stateDerivative accel state
+    b = nudge (0.5 * dt) a state |> stateDerivative accel
+    c = nudge (0.5 * dt) b state |> stateDerivative accel
+    d = nudge dt c state |> stateDerivative accel
+  in
+    state
+      |> nudge (dt / 6) a
+      |> nudge (dt / 3) b
+      |> nudge (dt / 3) c
+      |> nudge (dt / 6) d
+
+
+nudge : Float -> State -> State -> State
+nudge dt derivative state =
+  let
+    add dxdt x =
+      x + dt * dxdt
+
+    combine getter =
+      List.map2 add (getter derivative) (getter state)
+  in
+    { state
+      | coordinates = combine .coordinates
+      , velocities = combine .velocities
+    }
+      
+
+stateDerivative : Acceleration -> State -> State
+stateDerivative accel state =
+  { state
+    | coordinates = state.velocities
+    , velocities = accel state
+  }
+  
+
 type alias State =
   { time : Float
-  , coords : Array (Float, Float)
+  , coordinates : List Float
+  , velocities : List Float
   }
 
                  

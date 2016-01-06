@@ -17,7 +17,7 @@ all =
 stateTests : List Test
 stateTests =
   [ test "state1 is sugar for 1-dimensional state"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state1 (1, 2))
          (Mech.state 0 [(1, 2)])
 
@@ -32,12 +32,12 @@ stateTests =
          (Mech.state 0.5 [(1, 2)])
 
   , test "state2 is sugar for 2-dimensional state"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state2 (4, 2) (3, 1))
          (Mech.state 0 [(4, 2), (3, 1)])
          
   , test "state3 is sugar for 3-dimensional state"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state3 (8, 9) (4, 2) (3, 1))
          (Mech.state 0 [(8, 9), (4, 2), (3, 1)])
 
@@ -78,25 +78,32 @@ accelerationTests =
       Mech.acceleration (always [ -2 ])
   in
   [ test "state does not change if acceleration and velocity are zero"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state1 (1, 0))
          (Mech.evolve inert 1.0 (Mech.state1 (1, 0)))
 
   , test "position changes if velocity is non-zero"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state1 (2, 1))
          (Mech.evolve inert 1.0 (Mech.state1 (1, 1)))
 
   , test "dx = dt * v"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state1 (1.5, 1))
          (Mech.evolve inert 0.5 (Mech.state1 (1, 1)))
 
   , test "dv = dt * a"
-    <| assertEqual
+    <| assertAboutEqual
          (Mech.state1 (-0.25, -1))
          (Mech.evolve falling 0.5 (Mech.state1 (0, 0)))
   ]
+
+assertAboutEqual : Mech.State -> Mech.State -> Assertion
+assertAboutEqual a b =
+  if Mech.aboutEqual 1e-10 a b then
+    assert True
+  else
+    assertEqual a b
   
 {-
 lagrangianToAcceleration : Expression -> Acceleration
