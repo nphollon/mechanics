@@ -7,7 +7,7 @@
         "src"
     ],
     "exposed-modules": [
-        "TimeEvolution"
+        "Mechanics"
     ],
     "dependencies": {
         "deadfoxygrandpa/elm-test": "3.0.1 <= v < 4.0.0",
