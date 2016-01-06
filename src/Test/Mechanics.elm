@@ -107,8 +107,6 @@ assertAboutEqual a b =
     assertEqual a b
   
 {-
-lagrangianToAcceleration : Expression -> Acceleration
-
 num : Float -> Expression
 plus : Expression -> Expression -> Expression
 minus : Expression -> Expression -> Expression
@@ -127,5 +125,7 @@ velocity : Int -> Expression
 coordinate : Int -> Expression
 time : Expression
 
-eval : Expression -> State -> State
+eval : Expression -> State -> Float
+solveLagrangian : Expression -> List Expression
+lagrangianToAcceleration : Expression -> Acceleration
 -}
