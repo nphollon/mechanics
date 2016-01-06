@@ -138,9 +138,9 @@ nudge dt (Data derivative) (Data state) =
     combine getter =
       List.map2 add (getter derivative) (getter state)
   in
-    { state
-      | coordinates = combine .coordinates
-      , velocities = combine .velocities
+    { time = state.time + dt
+    , coordinates = combine .coordinates
+    , velocities = combine .velocities
     } |> Data
       
 

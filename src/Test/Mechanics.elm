@@ -79,24 +79,25 @@ accelerationTests =
   in
   [ test "state does not change if acceleration and velocity are zero"
     <| assertAboutEqual
-         (Mech.state1 (1, 0))
+         (Mech.state 1.0 [(1, 0)])
          (Mech.evolve inert 1.0 (Mech.state1 (1, 0)))
 
   , test "position changes if velocity is non-zero"
     <| assertAboutEqual
-         (Mech.state1 (2, 1))
+         (Mech.state 1.0 [(2, 1)])
          (Mech.evolve inert 1.0 (Mech.state1 (1, 1)))
 
   , test "dx = dt * v"
     <| assertAboutEqual
-         (Mech.state1 (1.5, 1))
+         (Mech.state 0.5 [(1.5, 1)])
          (Mech.evolve inert 0.5 (Mech.state1 (1, 1)))
 
   , test "dv = dt * a"
     <| assertAboutEqual
-         (Mech.state1 (-0.25, -1))
+         (Mech.state 0.5 [(-0.25, -1)])
          (Mech.evolve falling 0.5 (Mech.state1 (0, 0)))
   ]
+
 
 assertAboutEqual : Mech.State -> Mech.State -> Assertion
 assertAboutEqual a b =
