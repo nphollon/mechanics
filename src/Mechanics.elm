@@ -20,9 +20,9 @@ import Array exposing (Array)
 
 {-| A state describes a physical system at a moment in time. It contains three types of numbers:
 
-* A time
-* Coordinates of the system at the given time. If you took a snapshot of the system, what would it look like?
-* For each coordinate, a velocity. If you took another snapshot a split-second later, how much would it have changed?
+* Time.
+* Coordinates describing the position of the system. If you took a snapshot of the system, what would it look like?
+* Velocities describing the rates of change for each coordinate. If you took another snapshot a split-second later, how much would it have changed?
 
 Coordinates and velocities do not need to be rectangular (in X-Y-Z space). For example, a satellite orbiting the Earth could be described by spherical coordinates (altitude, latitude, and longitude). The coordinates and velocities don't even need to be spatial positions. For example, a kettle of water could have a coordinate for temperature. The "velocity" would be the rate of temperature change.
 -}
@@ -55,7 +55,7 @@ state time coords =
 
 {-| Create a 1-dimensional state. The time is set to zero.
 
-    state1 (x, v) == state 0 [ (x, v) ]
+    state1 (x, v) -- equals state 0 [ (x, v) ]
 -}
 state1 : (Float, Float) -> State
 state1 x =
@@ -64,7 +64,8 @@ state1 x =
 
 {-| Create a 2-dimensional state. The time is set to zero.
 
-    state2 (x, vx) (y, vy) == state 0 [ (x, vx), (y, vy) ]
+    state2 (x, vx) (y, vy) 
+    -- equals state 0 [ (x, vx), (y, vy) ]
 -}
 state2 : (Float, Float) -> (Float, Float) -> State
 state2 x y =
@@ -73,7 +74,8 @@ state2 x y =
 
 {-| Create a 3-dimensional state. The time is set to zero.
 
-    state2 (x, vx) (y, vy) (z, vz) == state 0 [ (x, vx), (y, vy), (z, vz) ]
+    state2 (x, vx) (y, vy) (z, vz)
+    -- equals state 0 [ (x, vx), (y, vy), (z, vz) ]
 -}
 state3 : (Float, Float) -> (Float, Float) -> (Float, Float) -> State
 state3 x y z =
@@ -109,36 +111,36 @@ aboutEqual tolerance (Data a) (Data b) =
     (eqAll a.velocities b.velocities)
     
   
-{-| Returns the number of coordinates in a state 
+{-| Returns the number of coordinates in a state. 
     
-    dimension (state1 (0, 0)) == 1
-    dimension (state3 (0, 0) (0, 0) (0, 0)) == 3
+    dimension (state1 (0, 0)) -- returns 1
+    dimension (state3 (0, 0) (0, 0) (0, 0)) -- returns 3
 -}
 dimension : State -> Int
 dimension (Data state) =
   List.length state.coordinates
 
 
-{-| Returns the time of a state
+{-| Returns the time of a state.
 
-    time (state1 (1, 5)) == 0
-    time (state 3.5 [ (0, 0) ]) == 3.5
+    time (state1 (1, 5)) -- returns 0
+    time (state 3.5 [ (0, 0) ]) -- returns 3.5
 -}
 time : State -> Float
 time (Data state) =
   state.time
 
 
-{-| For a given index `n`, returns the nth coordinate of a state. This works
-similarly to `Array.get`. Index is zero-based. An out-of-bounds index returns
+{-| For a given index `n`, returns the `n`th coordinate of a state. This works
+similarly to `Array.get`. The index is zero-based. An out-of-bounds index returns
 zero.
 
     theState = state3 (1, 2) (3, 4) (5, 6)
 
-    coordinate 0 theState == 1
-    coordinate 2 theState == 5
-    coordinate 3 theState == 0
-    coordinate -1 theState == 0
+    coordinate 0 theState -- returns 1
+    coordinate 2 theState -- returns 5
+    coordinate 3 theState -- returns 0
+    coordinate -1 theState -- returns 0
 -}
 coordinate : Int -> State -> Float
 coordinate i (Data state) =
@@ -147,14 +149,13 @@ coordinate i (Data state) =
     |> Maybe.withDefault 0
 
 
-{-| Returns the nth velocity of a state. Index is zero-based. An out-of-bounds
-index returns zero.
+{-| Returns the `n`th velocity of a state.
 
     theState = state3 (1, 2) (3, 4) (5, 6)
 
-    velocity 0 theState == 2
-    velocity 2 theState == 6
-    velocity 3 theState == 0
+    velocity 0 theState -- returns 2
+    velocity 2 theState -- returns 6
+    velocity 3 theState -- returns 0
 
 -}
 velocity : Int -> State -> Float
@@ -189,7 +190,7 @@ the resting position of the spring. The state has 1 dimension, X.
     hookesLaw position =
       mass * springStrength * (restPosition - position)
 
-    springAccel = acceleration (\state -> [ hookesLaw (coordinate 0 state) ])
+    springAccel = acceleration (\s -> [ hookesLaw (coordinate 0 s) ])
 -}
 acceleration : (State -> List Float) -> Acceleration
 acceleration a =
@@ -197,21 +198,18 @@ acceleration a =
 
   
 {-| Given an acceleration, a change in time, and a state, evolve the state
-forward in time.
+forward in time. (Under the hood, `evolve` uses the
+[Runge-Kutta method](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods).)
 
     start = state2 (0, 1) (10, 0)
 
     oneSecondLater = evolve fallingAccel 1.0 start 
-
-    oneSecondLater == state 0.5 [ (1, 1) (5, -10) ]
+    -- returns state 0.5 [ (1, 1) (5, -10) ]
 
 Toss this sucker into a `foldp`, and watch the Universe come to life before
 your eyes!
 
     model = Signal.foldp (evolve fallingAccel) start (Time.fps 30)
-
-Under the hood, `evolve` uses the
-[Runge-Kutta method](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods).
 -}
 evolve : Acceleration -> Float -> State -> State
 evolve accel dt state =
