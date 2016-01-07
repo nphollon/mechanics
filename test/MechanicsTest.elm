@@ -1,4 +1,4 @@
-module Test.Mechanics where
+module MechanicsTest where
 
 import Array
 

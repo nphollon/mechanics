@@ -1,4 +1,4 @@
-module Test.Lagrangian where
+module LagrangianTest where
 
 import Array
 

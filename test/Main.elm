@@ -8,10 +8,16 @@ module Main where
 import Console
 import ElmTest
 import Task
-import Test.Suite
+import LagrangianTest
+import MechanicsTest
 
 
 port runner : Signal (Task.Task a ())
 port runner =
-  Console.run <| ElmTest.consoleRunner Test.Suite.all
+  ElmTest.suite "Mechanics"
+          [ MechanicsTest.all
+          , LagrangianTest.all
+          ]
+  |> ElmTest.consoleRunner
+  |> Console.run
     
