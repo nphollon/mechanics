@@ -105,27 +105,3 @@ assertAboutEqual a b =
     assert True
   else
     assertEqual a b
-  
-{-
-num : Float -> Expression
-plus : Expression -> Expression -> Expression
-minus : Expression -> Expression -> Expression
-over : Expression -> Expression -> Expression
-times : Expression -> Expression -> Expression
-square : Expression -> Expression
-expt : Expression -> Expression -> Expression
-sin : Expression -> Expression
-cos : Expression -> Expression
-log : Expression -> Expression
-
-sum : List Expression -> Expression
-product : List Expression -> Expression
-
-velocity : Int -> Expression
-coordinate : Int -> Expression
-time : Expression
-
-eval : Expression -> State -> Float
-solveLagrangian : Expression -> List Expression
-lagrangianToAcceleration : Expression -> Acceleration
--}
