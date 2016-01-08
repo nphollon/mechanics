@@ -1,6 +1,17 @@
-module Lagrangian (num, time, coordinate, velocity, plus, minus, times, over, sum, product, square, expt, sine, cosine, ln, eval, partial, Expression) where
+module Lagrangian (num, time, coordinate, velocity, plus, minus, times, over, sum, product, square, expt, sine, cosine, ln, getFloat, eval, partial, solveLagrangian, Expression) where
 
 import Mechanics as Mech exposing (State)
+
+
+solveLagrangian : Expression -> Maybe (List Expression)
+solveLagrangian lagr =
+    let
+        accel =
+            over
+                (partial (coordinate 0) lagr)
+                (partial (velocity 0) (partial (velocity 0) lagr))
+    in
+        Just [ accel ]
 
 
 type Expression
@@ -132,30 +143,48 @@ square base =
 
 expt : Expression -> Expression -> Expression
 expt base power =
-    case power of
-        Const 0 ->
+    case ( base, power ) of
+        ( _, Const 0 ) ->
             num 1
 
-        Const 1 ->
+        ( _, Const 1 ) ->
             base
 
-        otherwise ->
+        ( Const c, Const d ) ->
+            Const (c ^ d)
+
+        ( _, _ ) ->
             Pow base power
 
 
 sine : Expression -> Expression
 sine x =
-    Sin x
+    try sin x |> Maybe.withDefault (Sin x)
 
 
 cosine : Expression -> Expression
 cosine x =
-    Cos x
+    try cos x |> Maybe.withDefault (Cos x)
 
 
 ln : Expression -> Expression
 ln x =
-    Log x
+    try (logBase e) x |> Maybe.withDefault (Log x)
+
+
+try : (Float -> Float) -> Expression -> Maybe Expression
+try f x =
+    Maybe.map (f >> num) (getFloat x)
+
+
+getFloat : Expression -> Maybe Float
+getFloat x =
+    case x of
+        Const c ->
+            Just c
+
+        _ ->
+            Nothing
 
 
 eval : Expression -> State -> Float

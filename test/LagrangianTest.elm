@@ -20,12 +20,12 @@ all =
 simplifyTests : List Test
 simplifyTests =
     [ test "multiplying 0 by x"
-        <| assertEqual
-            (num 0)
+        <| assertNum
+            0
             (product [ num 0, time ])
     , test "multiplying x by 0"
-        <| assertEqual
-            (num 0)
+        <| assertNum
+            0
             (product [ time, num 0 ])
     , test "multiplying 1 by x"
         <| assertEqual
@@ -40,16 +40,16 @@ simplifyTests =
             time
             (sum [ num 0, time ])
     , test "summing to 0"
-        <| assertEqual
-            (num 0)
+        <| assertNum
+            0
             (sum [ num 1, num -1 ])
     , test "power of one"
         <| assertEqual
             time
             (expt time (num 1))
     , test "power of zero"
-        <| assertEqual
-            (num 1)
+        <| assertNum
+            1
             (expt time (num 0))
     , test "nested multiplication"
         <| assertEqual
@@ -59,6 +59,22 @@ simplifyTests =
         <| assertEqual
             (sum [ num 2, time, velocity 0, coordinate 1 ])
             (num 2 `plus` time `plus` (velocity 0 `plus` coordinate 1))
+    , test "constants raised to constant power"
+        <| assertNum
+            8
+            (expt (num 2) (num 3))
+    , test "log of a constant"
+        <| assertNum
+            1
+            (ln (num e))
+    , test "sin of constant"
+        <| assertNum
+            0
+            (sine (num pi))
+    , test "cos of constant"
+        <| assertNum
+            -1
+            (cosine (num pi))
     ]
 
 
@@ -138,20 +154,15 @@ expressionTests =
         ]
 
 
-assertEval : Float -> Expression -> State -> Assertion
-assertEval expected expr state =
-    assertEqual expected (eval expr state)
-
-
 partialTests : List Test
 partialTests =
     [ test "derivative of constant is zero"
-        <| assertEqual
-            (num 0)
+        <| assertNum
+            0
             (partial time (num 1))
     , test "dx/dx = 1"
-        <| assertEqual
-            (num 1)
+        <| assertNum
+            1
             (partial time time)
     , test "d(sin x)/dx = cos x"
         <| assertEqual
@@ -206,11 +217,41 @@ partialTests =
 
 
 {-
-solveLagrangian : Expression -> List Expression
+solveLagrangian : Expression -> Maybe (List Expression)
 lagrangianToAcceleration : Expression -> Acceleration
 -}
 
 
 lagrangeTests : List Test
 lagrangeTests =
-    []
+    [ test "1D free particle lagrangian"
+        <| assertEqual
+            (Just [ num 0 ])
+            (solveLagrangian (square (velocity 0)))
+    , test "1D Lagrangian in gravity well"
+        <| assertEqual
+            (Just [ num -0.5 ])
+            (solveLagrangian ((square (velocity 0)) `minus` (coordinate 0)))
+    ]
+
+
+assertEval : Float -> Expression -> State -> Assertion
+assertEval expected expr state =
+    assertEqual expected (eval expr state)
+
+
+assertNum : Float -> Expression -> Assertion
+assertNum expected expr =
+    let
+        fail =
+            assertEqual (num expected) expr
+    in
+        case getFloat expr of
+            Just actual ->
+                if (actual - expected) ^ 2 < 1.0e-20 then
+                    assert True
+                else
+                    fail
+
+            Nothing ->
+                fail
