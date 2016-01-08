@@ -6,10 +6,20 @@ import Mechanics as Mech exposing (State)
 solveLagrangian : Expression -> Maybe (List Expression)
 solveLagrangian lagr =
     let
+        speedPartial =
+            partial (velocity 0) lagr
+
+        hessian =
+            partial (velocity 0) speedPartial
+
+        spacePartial =
+            partial (coordinate 0) lagr
+
+        timeSpeedPartial =
+            partial time speedPartial
+
         accel =
-            over
-                (partial (coordinate 0) lagr)
-                (partial (velocity 0) (partial (velocity 0) lagr))
+            (spacePartial `minus` timeSpeedPartial) `over` hessian
     in
         Just [ accel ]
 
@@ -152,6 +162,9 @@ expt base power =
 
         ( Const c, Const d ) ->
             Const (c ^ d)
+
+        ( Prod factors, _ ) ->
+            List.map (flip expt power) factors |> product
 
         ( _, _ ) ->
             Pow base power

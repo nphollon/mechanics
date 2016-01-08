@@ -75,6 +75,10 @@ simplifyTests =
         <| assertNum
             -1
             (cosine (num pi))
+    , test "(ab)^c -> (a^c)(b^c)"
+        <| assertEqual
+            ((expt time (num 2)) `times` (expt (coordinate 0) (num 2)))
+            (expt (time `times` (coordinate 0)) (num 2))
     ]
 
 
@@ -232,6 +236,10 @@ lagrangeTests =
         <| assertEqual
             (Just [ num -0.5 ])
             (solveLagrangian ((square (velocity 0)) `minus` (coordinate 0)))
+    , test "1D Lagrangian with time-dependent kinetic energy"
+        <| assertEqual
+            (Just [ product [ num -1, velocity 0, expt time (num -1) ] ])
+            (solveLagrangian ((square (velocity 0)) `times` time))
     ]
 
 
