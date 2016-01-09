@@ -79,6 +79,14 @@ simplifyTests =
         <| assertEqual
             ((expt time (num 2)) `times` (expt (coordinate 0) (num 2)))
             (expt (time `times` (coordinate 0)) (num 2))
+    , test "(a^b)*(a^c)*d -> a^(b+c)*d"
+        <| assertEqual
+            ((expt time (num 5)) `times` (coordinate 0))
+            ((expt time (num 3)) `times` (expt time (num 2)) `times` (coordinate 0))
+    , test "n*a*b + m*a*b -> (m + n) * a * b if m and n are constants"
+        <| assertEqual
+            (product [ num 3, time, coordinate 0 ])
+            ((time `times` (coordinate 0)) `plus` (product [ num 2, time, coordinate 0 ]))
     ]
 
 

@@ -30,7 +30,7 @@ type Expression
     | Coord Int
     | Vel Int
     | Sum (List Expression)
-    | Prod (List Expression)
+    | Prod Float (List Expression)
     | Pow Expression Expression
     | Log Expression
     | Sin Expression
@@ -70,23 +70,38 @@ minus a b =
 sum : List Expression -> Expression
 sum terms =
     let
+        findTerm query symbols =
+            List.partition (\symbol -> fst symbol == query) symbols
+
+        raiseCoeff term coeff symbols =
+            case findTerm term symbols of
+                ( [], s ) ->
+                    ( term, coeff ) :: s
+
+                ( r, s ) ->
+                    ( term, coeff + List.sum (List.map snd r) ) :: s
+
         addTerm term ( const, symbols ) =
             case term of
                 Const n ->
                     ( n + const, symbols )
 
-                Sum ((Const n) :: subsymbols) ->
-                    ( n + const, subsymbols ++ symbols )
-
                 Sum subsymbols ->
-                    ( const, subsymbols ++ symbols )
+                    List.foldr addTerm ( const, symbols ) subsymbols
+
+                Prod coeff factors ->
+                    ( const, raiseCoeff factors coeff symbols )
 
                 otherwise ->
-                    ( const, term :: symbols )
+                    ( const, raiseCoeff [ term ] 1 symbols )
 
-        reduced = List.foldr addTerm ( 0, [] ) terms
+        ( const, symbols ) =
+            List.foldr addTerm ( 0, [] ) terms
+
+        reducedSymbols =
+            List.map (\( factors, coeff ) -> product (num coeff :: factors)) symbols
     in
-        case reduced of
+        case ( const, reducedSymbols ) of
             ( c, [] ) ->
                 num c
 
@@ -113,23 +128,38 @@ over a b =
 product : List Expression -> Expression
 product factors =
     let
+        findFactor query symbols =
+            List.partition (\symbol -> fst symbol == query) symbols
+
+        raisePower base power symbols =
+            case findFactor base symbols of
+                ( [], s ) ->
+                    ( base, power ) :: s
+
+                ( r, s ) ->
+                    ( base, sum (power :: (List.map snd r)) ) :: s
+
         addFactor factor ( const, symbols ) =
             case factor of
                 Const n ->
                     ( n * const, symbols )
 
-                Prod ((Const n) :: subsymbols) ->
-                    ( n * const, subsymbols ++ symbols )
+                Prod coeff subfactors ->
+                    List.foldr addFactor ( const * coeff, symbols ) subfactors
 
-                Prod subsymbols ->
-                    ( const, subsymbols ++ symbols )
+                Pow base power ->
+                    ( const, raisePower base power symbols )
 
-                otherwise ->
-                    ( const, factor :: symbols )
+                _ ->
+                    ( const, raisePower factor (num 1) symbols )
 
-        reduced = List.foldr addFactor ( 1, [] ) factors
+        ( const, symbols ) =
+            List.foldr addFactor ( 1, [] ) factors
+
+        reducedSymbols =
+            List.map (\( base, power ) -> expt base power) symbols
     in
-        case reduced of
+        case ( const, reducedSymbols ) of
             ( 0, _ ) ->
                 num 0
 
@@ -139,11 +169,8 @@ product factors =
             ( 1, x :: [] ) ->
                 x
 
-            ( 1, xs ) ->
-                Prod xs
-
             ( c, xs ) ->
-                Prod ((num c) :: xs)
+                Prod c xs
 
 
 square : Expression -> Expression
@@ -163,8 +190,8 @@ expt base power =
         ( Const c, Const d ) ->
             Const (c ^ d)
 
-        ( Prod factors, _ ) ->
-            List.map (flip expt power) factors |> product
+        ( Prod coeff factors, _ ) ->
+            List.map (flip expt power) (num coeff :: factors) |> product
 
         ( _, _ ) ->
             Pow base power
@@ -218,8 +245,8 @@ eval expr state =
         Sum terms ->
             List.map (flip eval state) terms |> List.sum
 
-        Prod factors ->
-            List.map (flip eval state) factors |> List.product
+        Prod coeff factors ->
+            List.map (flip eval state) factors |> List.product |> (*) coeff
 
         Pow base power ->
             (eval base state) ^ (eval power state)
@@ -255,12 +282,12 @@ partial variable function =
                 Vel _ ->
                     num 0
 
-                Prod factors ->
+                Prod coeff factors ->
                     let
                         productTerm u =
                             product ((recurse u) :: (List.filter ((/=) u) factors))
                     in
-                        List.map productTerm factors |> sum
+                        List.map productTerm factors |> sum |> times (num coeff)
 
                 Sum terms ->
                     List.map recurse terms |> sum
