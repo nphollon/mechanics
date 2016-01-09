@@ -23,9 +23,11 @@ solveLagrangian lagr =
 
         accel =
             (spacePartial `minus` timeSpeedPartial `minus` (spaceSpeedPartial `times` (velocity 0)))
-                `over` hessian
     in
-        Just [ accel ]
+        if hessian == num 0 then
+            Nothing
+        else
+            Just [ accel `over` hessian ]
 
 
 type Expression

@@ -237,21 +237,24 @@ lagrangianToAcceleration : Expression -> Acceleration
 lagrangeTests : List Test
 lagrangeTests =
     [ test "1D free particle lagrangian"
-        <| assertLagrangian
+        <| assertAcceleration
             [ num 0 ]
             (square (velocity 0))
     , test "1D Lagrangian in gravity well"
-        <| assertLagrangian
+        <| assertAcceleration
             [ num -0.5 ]
             ((square (velocity 0)) `minus` (coordinate 0))
     , test "1D Lagrangian with time-dependent kinetic energy"
-        <| assertLagrangian
+        <| assertAcceleration
             [ product [ num -1, velocity 0, expt time (num -1) ] ]
             ((square (velocity 0)) `times` time)
     , test "1D Lagrangian with coordinate-dependent kinetic energy"
-        <| assertLagrangian
+        <| assertAcceleration
             [ product [ num -0.5, expt (velocity 0) (num 2), expt (coordinate 0) (num -1) ] ]
             (product [ coordinate 0, expt (velocity 0) (num 2) ])
+    , test "Cannot solve 1D Lagrangian with no square-velocity term"
+        <| assertNoAcceleration
+            (velocity 0)
     ]
 
 
@@ -277,6 +280,11 @@ assertNum expected expr =
                 fail
 
 
-assertLagrangian : List Expression -> Expression -> Assertion
-assertLagrangian expected lagr =
+assertAcceleration : List Expression -> Expression -> Assertion
+assertAcceleration expected lagr =
     assertEqual (Just expected) (solveLagrangian lagr)
+
+
+assertNoAcceleration : Expression -> Assertion
+assertNoAcceleration lagr =
+    assertEqual Nothing (solveLagrangian lagr)
