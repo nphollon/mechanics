@@ -18,8 +18,12 @@ solveLagrangian lagr =
         timeSpeedPartial =
             partial time speedPartial
 
+        spaceSpeedPartial =
+            partial (coordinate 0) speedPartial
+
         accel =
-            (spacePartial `minus` timeSpeedPartial) `over` hessian
+            (spacePartial `minus` timeSpeedPartial `minus` (spaceSpeedPartial `times` (velocity 0)))
+                `over` hessian
     in
         Just [ accel ]
 
