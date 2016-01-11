@@ -1,4 +1,4 @@
-module Lagrangian (num, time, coordinate, velocity, plus, minus, times, over, sum, product, square, expt, sine, cosine, ln, getFloat, eval, partial, solveLagrangian, Expression) where
+module Lagrangian (num, time, coordinate, velocity, plus, minus, times, over, sum, product, square, expt, sine, cosine, ln, dimension, getFloat, eval, partial, solveLagrangian, Expression) where
 
 import Mechanics as Mech exposing (State)
 
@@ -6,28 +6,38 @@ import Mechanics as Mech exposing (State)
 solveLagrangian : Expression -> Maybe (List Expression)
 solveLagrangian lagr =
     let
-        speedPartial =
-            partial (velocity 0) lagr
+        speedPartial i =
+            partial (velocity i) lagr
 
-        hessian =
-            partial (velocity 0) speedPartial
+        hessian i =
+            partial (velocity i) (speedPartial i)
 
-        spacePartial =
-            partial (coordinate 0) lagr
+        spacePartial i =
+            partial (coordinate i) lagr
 
-        timeSpeedPartial =
-            partial time speedPartial
+        timeSpeedPartial i =
+            partial time (speedPartial i)
 
-        spaceSpeedPartial =
-            partial (coordinate 0) speedPartial
+        spaceSpeedPartial i =
+            partial (coordinate i) (speedPartial i)
 
-        accel =
-            (spacePartial `minus` timeSpeedPartial `minus` (spaceSpeedPartial `times` (velocity 0)))
+        numerator i =
+            sum
+                [ spacePartial i
+                , (num -1) `times` (timeSpeedPartial i)
+                , product [ num -1, spaceSpeedPartial i, velocity i ]
+                ]
+
+        accel i result =
+            if hessian i == (num 0) then
+                Nothing
+            else
+                Just (((numerator i) `over` (hessian i)) :: result)
     in
-        if hessian == num 0 then
-            Nothing
-        else
-            Just [ accel `over` hessian ]
+        List.foldr
+            (accel >> (flip Maybe.andThen))
+            (Just [])
+            [0..(dimension lagr - 1)]
 
 
 type Expression
@@ -221,6 +231,40 @@ ln x =
 try : (Float -> Float) -> Expression -> Maybe Expression
 try f x =
     Maybe.map (f >> num) (getFloat x)
+
+
+dimension : Expression -> Int
+dimension expr =
+    case expr of
+        Const _ ->
+            0
+
+        Time ->
+            0
+
+        Coord i ->
+            i + 1
+
+        Vel i ->
+            i + 1
+
+        Sum terms ->
+            List.map dimension terms |> List.maximum |> Maybe.withDefault 0
+
+        Prod _ factors ->
+            List.map dimension factors |> List.maximum |> Maybe.withDefault 0
+
+        Pow x y ->
+            max (dimension x) (dimension y)
+
+        Log x ->
+            dimension x
+
+        Sin x ->
+            dimension x
+
+        Cos x ->
+            dimension x
 
 
 getFloat : Expression -> Maybe Float
