@@ -1,4 +1,4 @@
-module Lagrangian (num, time, coordinate, velocity, plus, minus, times, over, sum, product, square, expt, sine, cosine, ln, dimension, getFloat, eval, partial, solveLagrangian, Expression) where
+module Lagrangian (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, eval, partial, solveLagrangian, Expression) where
 
 import Mechanics as Mech exposing (State)
 
@@ -6,38 +6,56 @@ import Mechanics as Mech exposing (State)
 solveLagrangian : Expression -> Maybe (List Expression)
 solveLagrangian lagr =
     let
-        speedPartial i =
-            partial (velocity i) lagr
+        indexes = [0..(dimension lagr - 1)]
 
-        hessian i =
-            partial (velocity i) (speedPartial i)
+        spaceTerm =
+            List.map (\i -> partial (coordinate i) lagr) indexes
 
-        spacePartial i =
-            partial (coordinate i) lagr
+        speedPartial =
+            List.map (\i -> partial (velocity i) lagr) indexes
 
-        timeSpeedPartial i =
-            partial time (speedPartial i)
+        hessian =
+            List.map2 (\i d2L -> partial (velocity i) d2L) indexes speedPartial
 
-        spaceSpeedPartial i =
-            partial (coordinate i) (speedPartial i)
+        timeTerm =
+            List.map (partial time) speedPartial
 
-        numerator i =
-            sum
-                [ spacePartial i
-                , (num -1) `times` (timeSpeedPartial i)
-                , product [ num -1, spaceSpeedPartial i, velocity i ]
-                ]
+        spaceSpeedPartial =
+            List.map (\i -> List.map (partial (coordinate i)) speedPartial) indexes
 
-        accel i result =
-            if hessian i == (num 0) then
-                Nothing
-            else
-                Just (((numerator i) `over` (hessian i)) :: result)
+        speedVector =
+            List.map velocity indexes
+
+        speedTerm =
+            speedVector `dotProduct` spaceSpeedPartial
+
+        accel =
+            List.map4
+                (\d1L d0d2L vd1d2L d2d2L ->
+                    if (d2d2L == (num 0)) then
+                        Nothing
+                    else
+                        Just ((d1L `minus` d0d2L `minus` vd1d2L) `over` d2d2L)
+                )
+                spaceTerm
+                timeTerm
+                speedTerm
+                hessian
     in
-        List.foldr
-            (accel >> (flip Maybe.andThen))
-            (Just [])
-            [0..(dimension lagr - 1)]
+        List.foldr (Maybe.map2 (::)) (Just []) accel
+
+
+dotProduct : List Expression -> List (List Expression) -> List Expression
+dotProduct vector matrix =
+    List.map2 (times >> List.map) vector matrix
+        |> List.foldl
+            (\row result ->
+                if (List.isEmpty result) then
+                    row
+                else
+                    List.map2 plus row result
+            )
+            []
 
 
 type Expression
@@ -73,6 +91,11 @@ velocity i =
     Vel i
 
 
+negative : Expression -> Expression
+negative x =
+    (num -1) `times` x
+
+
 plus : Expression -> Expression -> Expression
 plus a b =
     sum [ a, b ]
@@ -80,7 +103,7 @@ plus a b =
 
 minus : Expression -> Expression -> Expression
 minus a b =
-    sum [ a, (num -1) `times` b ]
+    sum [ a, negative b ]
 
 
 sum : List Expression -> Expression
@@ -194,6 +217,11 @@ square base =
     base `expt` (num 2)
 
 
+inverse : Expression -> Expression
+inverse x =
+    x `expt` (num -1)
+
+
 expt : Expression -> Expression -> Expression
 expt base power =
     case ( base, power ) of
@@ -204,10 +232,13 @@ expt base power =
             base
 
         ( Const c, Const d ) ->
-            Const (c ^ d)
+            num (c ^ d)
 
         ( Prod coeff factors, _ ) ->
             List.map (flip expt power) (num coeff :: factors) |> product
+
+        ( Pow subbase subpower, _ ) ->
+            expt subbase (subpower `times` power)
 
         ( _, _ ) ->
             Pow base power
@@ -360,7 +391,7 @@ partial variable function =
                     (cosine u) `times` (recurse u)
 
                 Cos u ->
-                    product [ num -1, sine u, recurse u ]
+                    (negative (sine u)) `times` (recurse u)
 
                 Log u ->
                     (expt u (num -1)) `times` (recurse u)

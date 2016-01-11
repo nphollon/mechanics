@@ -87,6 +87,18 @@ simplifyTests =
         <| assertEqual
             (product [ num 3, time, coordinate 0 ])
             ((time `times` (coordinate 0)) `plus` (product [ num 2, time, coordinate 0 ]))
+    , test "negation"
+        <| assertEqual
+            (num -1)
+            (negative (num 1))
+    , test "inversion"
+        <| assertEqual
+            (expt time (num -1))
+            (inverse time)
+    , test "(a^b)^c -> a^(b*c)"
+        <| assertEqual
+            (expt time (num -2))
+            (inverse (square time))
     ]
 
 
@@ -271,6 +283,12 @@ lagrangeTests =
         <| assertAcceleration
             [ num 0, num -0.5 ]
             (sum [ square (velocity 0), square (velocity 1), (num -1) `times` (coordinate 1) ])
+    , test "2D Lagrangian with coordinate-dependent velocity"
+        <| assertAcceleration
+            [ product [ num -1, velocity 1, velocity 0, expt (coordinate 1) (num -1) ]
+            , (num 0.5) `times` (square (velocity 0))
+            ]
+            (((square (velocity 0)) `times` (coordinate 1)) `plus` (square (velocity 1)))
     ]
 
 
