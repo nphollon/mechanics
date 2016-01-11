@@ -1,23 +1,20 @@
-{- -
-  This program will not work in the browser.
-  To run on the command line, execute run-tests.sh
-- -}
-
-module Main where
+module Main (..) where
 
 import Console
 import ElmTest
 import Task
 import LagrangianTest
 import MechanicsTest
+import ExpressionTest
 
 
 port runner : Signal (Task.Task a ())
 port runner =
-  ElmTest.suite "Mechanics"
-          [ MechanicsTest.all
-          , LagrangianTest.all
-          ]
-  |> ElmTest.consoleRunner
-  |> Console.run
-    
+    ElmTest.suite
+        "Mechanics"
+        [ MechanicsTest.all
+        , ExpressionTest.all
+        , LagrangianTest.all
+        ]
+        |> ElmTest.consoleRunner
+        |> Console.run
