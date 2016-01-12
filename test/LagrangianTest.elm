@@ -3,25 +3,26 @@ module LagrangianTest (all) where
 import ElmTest exposing (..)
 import Lagrangian exposing (..)
 import Expression exposing (..)
+import Mechanics exposing (State)
 
 
 all : Test
 all =
     suite
         "Lagrangian mechanics"
-        [ suite "Solving Lagrange equations" lagrangeTests
+        [ suite "Solving Lagrange equations" solveTests
+        , suite "Getting accelerations from lagrangians" accelerationTests
         ]
 
 
 
 {-
-solveLagrangian : Expression -> Maybe (List Expression)
 lagrangianToAcceleration : Expression -> Acceleration
 -}
 
 
-lagrangeTests : List Test
-lagrangeTests =
+solveTests : List Test
+solveTests =
     [ test "Lagrangian with velocity 0 is 1-dimensional"
         <| assertEqual
             1
@@ -68,9 +69,34 @@ lagrangeTests =
 
 assertAcceleration : List Expression -> Expression -> Assertion
 assertAcceleration expected lagr =
-    assertEqual (Just expected) (solveLagrangian lagr)
+    assertEqual (Just expected) (solve lagr)
 
 
 assertNoAcceleration : Expression -> Assertion
 assertNoAcceleration lagr =
-    assertEqual Nothing (solveLagrangian lagr)
+    assertEqual Nothing (solve lagr)
+
+
+accelerationTests : List Test
+accelerationTests =
+    let
+        falling =
+            (((num 0.5) `times` ((square (velocity 0)) `plus` (square (velocity 1))))
+                `minus` ((num 10) `times` (coordinate 1))
+            )
+                |> toAcceleration
+                |> Maybe.withDefault (Mechanics.acceleration (always []))
+    in
+        [ test "gravitational potential"
+            <| assertAboutEqual
+                (Mechanics.state 0.5 [ ( 3, 6 ), ( -1.25, -5 ) ])
+                (Mechanics.evolve falling 0.5 (Mechanics.state2 ( 0, 6 ) ( 0, 0 )))
+        ]
+
+
+assertAboutEqual : State -> State -> Assertion
+assertAboutEqual a b =
+    if Mechanics.aboutEqual 1.0e-10 a b then
+        assert True
+    else
+        assertEqual a b

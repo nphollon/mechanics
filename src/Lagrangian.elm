@@ -1,11 +1,11 @@
-module Lagrangian (solveLagrangian) where
+module Lagrangian (solve, toAcceleration) where
 
-import Mechanics as Mech exposing (State)
 import Expression exposing (..)
+import Mechanics
 
 
-solveLagrangian : Expression -> Maybe (List Expression)
-solveLagrangian lagr =
+solve : Expression -> Maybe (List Expression)
+solve lagr =
     let
         indexes = [0..(dimension lagr - 1)]
 
@@ -57,3 +57,15 @@ dotProduct vector matrix =
                     List.map2 plus row result
             )
             []
+
+
+toAcceleration : Expression -> Maybe Mechanics.Acceleration
+toAcceleration lagrangian =
+    let
+        accelerate expressions =
+            Mechanics.acceleration
+                (\state ->
+                    List.map (flip eval state) expressions
+                )
+    in
+        Maybe.map accelerate (solve lagrangian)
