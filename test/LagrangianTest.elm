@@ -52,6 +52,9 @@ solveTests =
             , (num 0.5) `times` (square (velocity 0))
             ]
             (((square (velocity 0)) `times` (coordinate 1)) `plus` (square (velocity 1)))
+    , test "Cannot solve 2D Lagrangian with velocity cross-derivatives"
+        <| assertNoAcceleration
+            ((square (velocity 0)) `times` (square (velocity 1)))
     ]
 
 

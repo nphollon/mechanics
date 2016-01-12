@@ -2,6 +2,7 @@ module Lagrangian (solve, toAcceleration) where
 
 import Expression exposing (..)
 import Mechanics
+import Types
 
 
 solve : Expression -> Maybe (List Expression)
@@ -43,7 +44,49 @@ solve lagr =
                 speedTerm
                 hessian
     in
-        List.foldr (Maybe.map2 (::)) (Just []) accel
+        if hasSeparableVelocities hessian then
+            List.foldr (Maybe.map2 (::)) (Just []) accel
+        else
+            Nothing
+
+
+hasSeparableVelocities : List Expression -> Bool
+hasSeparableVelocities expressions =
+    let
+        containsJust i expr =
+            case expr of
+                Types.Const _ ->
+                    True
+
+                Types.Time ->
+                    True
+
+                Types.Coord _ ->
+                    True
+
+                Types.Vel j ->
+                    i == j
+
+                Types.Sum terms ->
+                    List.all (containsJust i) terms
+
+                Types.Prod _ factors ->
+                    List.all (containsJust i) factors
+
+                Types.Pow base power ->
+                    containsJust i base && containsJust i power
+
+                Types.Log x ->
+                    containsJust i x
+
+                Types.Sin x ->
+                    containsJust i x
+
+                Types.Cos x ->
+                    containsJust i x
+    in
+        List.indexedMap containsJust expressions
+            |> List.all identity
 
 
 dotProduct : List Expression -> List (List Expression) -> List Expression

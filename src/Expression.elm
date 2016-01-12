@@ -1,19 +1,11 @@
 module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, partial, eval, Expression) where
 
 import Mechanics as Mech exposing (State)
+import Types exposing (Expression(..))
 
 
-type Expression
-    = Const Float
-    | Time
-    | Coord Int
-    | Vel Int
-    | Sum (List Expression)
-    | Prod Float (List Expression)
-    | Pow Expression Expression
-    | Log Expression
-    | Sin Expression
-    | Cos Expression
+type alias Expression =
+    Types.Expression
 
 
 num : Float -> Expression
