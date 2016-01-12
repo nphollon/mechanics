@@ -23,19 +23,7 @@ lagrangianToAcceleration : Expression -> Acceleration
 
 solveTests : List Test
 solveTests =
-    [ test "Lagrangian with velocity 0 is 1-dimensional"
-        <| assertEqual
-            1
-            (dimension (velocity 0))
-    , test "Lagrangian with velocity 1 is 2-dimensional"
-        <| assertEqual
-            2
-            (dimension ((velocity 0) `plus` (velocity 1)))
-    , test "Lagrangian with coordinate 2 is 3-dimensional"
-        <| assertEqual
-            3
-            (dimension ((velocity 0) `times` (coordinate 2)))
-    , test "1D free particle lagrangian"
+    [ test "1D free particle lagrangian"
         <| assertAcceleration
             [ num 0 ]
             (square (velocity 0))
