@@ -6,7 +6,7 @@ a Lagrangian.
 
     Lagrangian = KineticEnergy - PotentialEnergy
 
-@docs toAcceleration, solve
+@docs solve, toAcceleration
 -}
 
 import Expression exposing (..)
@@ -17,28 +17,45 @@ import Types
 {-| Given a Lagrangian, try to compute the acceleration of the system. The result
 is a list of expressions describing the acceleration of each coordinate.
 
-This function will return `Nothing` if the expression it receives does not obey
-the following rules:
+    import Expression exposing (..)
+
+    -- An object in freefall. Coordinate 0 is horizontal, coordinate 1 is vertical.
+
+    kineticEnergy =
+            ((num 0.5) `times` ((square (velocity 0)) `plus` (square (velocity 1))))
+
+    potentialEnergy =
+            ((num 10) `times` (coordinate 1))
+
+    freefallLagrangian = kineticEnergy `minus` potentialEnergy
+
+    solve freefallLagrangian
+    -- equals Just [ num 0, num -10 ]
+
+
+This function will return `Nothing` if the Lagrangian does not have a diagonal
+[Hessian matrix](https://en.wikipedia.org/wiki/Hessian_matrix).
+In other words, the Lagrangian should obey the following rules:
 
 * Every coordinate index must have a velocity-squared term.
+* Velocities with different indexes can be added but not combined in other ways.
+
+Below are examples of good and bad inputs:
+
+    -- Good
+    sum [ square (velocity 0), square (velocity 1), square (velocity 2) ]
+
+    -- Good: It is OK to multiply coordinates and velocities
+    (square (velocity 0)) `plus` ((coordinate 0) `times` (square (velocity 1)))
 
     -- Bad: The expression has (coordinate 1) but no (square (velocity 1))
     (square (velocity 0)) `plus` (coordinate 0) `plus` (coordinate 1)
 
-    -- Good: Not every velocity needs a corresponding coordinate
-    sum [ square (velocity 0), square (velocity 1), square (velocity 2) ]
-
-    -- Bad: (square (velocity 3)) appears, but 1 and 2 are missing
+    -- Bad: velocities 1 and 2 are missing
     sum [ square (velocity 0), square (velocity 3) ]
 
-
-* Velocities with different indexes can be added but not combined in other ways.
-
-    -- Bad: (velocity 0) and (velocity 1) are multiplied, not added
+    -- Bad: (velocity 0) and (velocity 1) are multiplied
     (square (velocity 0)) `times` (square (velocity 1))
-
-    -- Good: It is OK to multiply coordinates and velocities
-    (square (velocity 0)) `plus` ((coordinate 0) `times` (square (velocity 1)))
 -}
 solve : Expression -> Maybe (List Expression)
 solve lagr =
@@ -137,10 +154,19 @@ dotProduct vector matrix =
             []
 
 
+{-| The same as `solve`, but returns the solution as a `Mechanics.Acceleration`.
+The result can be plugged directly into `Mechanics.evolve`.
 
-{-| The same as `solve`, but wraps up the solution in a
-`Mechanics.Acceleration` value. The result can be plugged directly into
-`Mechanics.evolve`.
+    freefallAcceleration =
+        toAcceleration freefallLagrangian
+            |> Maybe.withDefault (Mechanics.acceleration (always []))
+
+    startState = Mechanics.state2 (0, 6) (0, 0)
+
+    dt = 0.5
+
+    Mechanics.evolve freefallAcceleration dt startState
+    -- equals Mechanics.state 0.5 [ (3, 6) ( -1.25, -5 ) ]
 -}
 toAcceleration : Expression -> Maybe Mechanics.Acceleration
 toAcceleration lagrangian =
