@@ -1,5 +1,5 @@
 {
-    "version": "3.0.1",
+    "version": "3.1.0",
     "summary": "Simulate physical systems changing over time",
     "repository": "https://github.com/nphollon/mechanics.git",
     "license": "MIT",
