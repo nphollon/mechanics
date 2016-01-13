@@ -1,6 +1,6 @@
 module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, print, partial, eval, Expression) where
 
-{-| Create symbolic mathematic expressions. For use with the `Lagrangian` module.
+{-| Create symbolic mathematic expressions. For use with the `Lagrangian` module. The variable names are designed to correspond with the fields in `Mechanics.State`.
 
 # Using expressions
 @docs Expression, eval
@@ -23,45 +23,81 @@ import Mechanics as Mech exposing (State)
 import Types exposing (Expression(..))
 
 
+{-| -}
 type alias Expression =
     Types.Expression
 
 
+{-| Encode a number as an expression.
+
+    print (num 3.14) == "3.14"
+-}
 num : Float -> Expression
 num c =
     Const c
 
 
+{-| A variable representing time.
+
+    print time == "t"
+-}
 time : Expression
 time =
     Time
 
 
+{-| A variable representing the coordinate with the given index.
+
+    print (coordinate 0) == "x_0"
+-}
 coordinate : Int -> Expression
 coordinate i =
     Coord i
 
 
+{-| A variable representing the velocity with the given index.
+
+    print (velocity 0) == "v_0"
+-}
 velocity : Int -> Expression
 velocity i =
     Vel i
 
 
+{-| Multiply an expression by -1.
+
+    print (negative (num 2)) == "-2"
+    print (negative time) == "(-1 t)"
+-}
 negative : Expression -> Expression
 negative x =
     (num -1) `times` x
 
 
+{-| Add two expressions.
+
+    print ((num 3) `plus` (num 4)) == "7"
+    print ((num 3) `plus` (velocity 2)) == "(3 + v_2)"
+    print ((coordinate 1) `plus` (num 0)) == "x_1"
+-}
 plus : Expression -> Expression -> Expression
 plus a b =
     sum [ a, b ]
 
 
+{-| Subtract two expressions.
+
+    print ((num 3) `minus` time) == "(3 + (-1 t))"
+-}
 minus : Expression -> Expression -> Expression
 minus a b =
     sum [ a, negative b ]
 
 
+{-| Add a list of expressions
+
+    print (sum [ num -5, time, coordinate 0, num 8 ]) == "(-3 + t + x_0)"
+-}
 sum : List Expression -> Expression
 sum terms =
     let
@@ -110,16 +146,31 @@ sum terms =
                 Sum ((num c) :: xs)
 
 
+{-| Multiply two expressions.
+
+    print ((num 14) `times` (num 0.5)) == "7"
+    print ((num 2) `times` time) == "(2 t)"
+    print ((num 0) `times` time) == "0"
+    print ((num 1) `times` time) == "t"
+-}
 times : Expression -> Expression -> Expression
 times a b =
     product [ a, b ]
 
 
+{-| Divide two expressions.
+
+    print ((num 2) `over` time) == "(2 (t ^ -1))"
+-}
 over : Expression -> Expression -> Expression
 over a b =
     product [ a, b `expt` (num -1) ]
 
 
+{-| Multiply a list of factors.
+
+    print (product [ num -5, time, coordinate 0, num 8 ]) == "(-40 t x_0)"
+-}
 product : List Expression -> Expression
 product factors =
     let
@@ -168,16 +219,32 @@ product factors =
                 Prod c xs
 
 
+{-| Raise an expression to the power of 2.
+
+    print (square (velocity 0)) == "(v_0 ^ 2)"
+-}
 square : Expression -> Expression
 square base =
     base `expt` (num 2)
 
 
+{-| Raise an expression to the power of -1.
+
+    print (inverse time) == "(t ^ -1)"
+-}
 inverse : Expression -> Expression
 inverse x =
     x `expt` (num -1)
 
 
+{-| Raise the first expression to the power of the second expression.
+
+    print (expt (num 2) (num 3)) == "8"
+    print (expt (num 2) time) == "(2 ^ t)"
+    print (expt (expt (coordinate 0) time) (num 2)) == "(x_0 ^ (2 t))"
+    print (expt time (num 0)) == "1"
+    print (expt time (num 1)) == "t"
+-}
 expt : Expression -> Expression -> Expression
 expt base power =
     case ( base, power ) of
@@ -200,16 +267,29 @@ expt base power =
             Pow base power
 
 
+{-| Take the sine of an expression.
+
+    print (sine time) == "(sin t)"
+-}
 sine : Expression -> Expression
 sine x =
     try sin x |> Maybe.withDefault (Sin x)
 
 
+{-| Take the cosine of an expression.
+
+    print (cosine time) == "(cos t)"
+-}
 cosine : Expression -> Expression
 cosine x =
     try cos x |> Maybe.withDefault (Cos x)
 
 
+{-| Take the natural logarithm of an expression.
+
+    print (ln (num e)) == "1"
+    print (ln (coordinate 1)) == "(ln x_1)"
+-}
 ln : Expression -> Expression
 ln x =
     try (logBase e) x |> Maybe.withDefault (Log x)
@@ -220,6 +300,15 @@ try f x =
     Maybe.map (f >> num) (getFloat x)
 
 
+{-| Return the size of the coordinate/velocity vector used by the expression.
+This is one plus the highest index used.
+
+    dimension (num 8) == 0
+    dimension (sine (time)) == 0
+    dimension (((num 2) `times` time) `plus` (coordinate 0)) == 1
+    dimension ((coordinate 0) `times` (coordinate 1)) == 2
+    dimension (square (velocity 2)) == 3
+-}
 dimension : Expression -> Int
 dimension expr =
     case expr of
@@ -254,6 +343,12 @@ dimension expr =
             dimension x
 
 
+{-| If the expression equals a constant, return the constant. Otherwise, return `Nothing`.
+
+    getFloat (num 3) == Just 3
+    getFloat ((num 3) `times` (coordinate 0)) == Nothing
+    getFloat ((num 0) `times` (coordinate 0)) == Just 0
+-}
 getFloat : Expression -> Maybe Float
 getFloat x =
     case x of
@@ -264,6 +359,8 @@ getFloat x =
             Nothing
 
 
+{-| Convert the expression to a string. Examples are all over this page.
+-}
 print : Expression -> String
 print expression =
     let
@@ -310,6 +407,12 @@ print expression =
                 "cos " ++ (print x) |> enclose
 
 
+{-| Take the partial derivative of the second expression with respect to the first.
+
+    print (partial time (expt time (num 3))) == "(3 (t ^ 2))"
+    print (partial (coordinate 0) (sine (coordinate 0))) == "(cos x_0)"
+    print (partial time ((velocity 0) `times` (coordinate 0))) == "0"
+-}
 partial : Expression -> Expression -> Expression
 partial variable function =
     let
@@ -365,6 +468,21 @@ partial variable function =
                     (expt u (num -1)) `times` (recurse u)
 
 
+{-| Evaluate an expression, replacing the variables in the expression with the
+data in the state.
+
+    data = Mechanics.state1 (3, 5)
+
+    expression = (square (velocity 0)) `minus` (coordinate 0)
+
+    eval expression data == 22
+
+If the expression has a greater dimension than the state, the extra coordinate/velocity
+components are assumed to be zero.
+
+    Mechanics.state1 (3, 5)
+        |> eval (velocity 1) == 0
+-}
 eval : Expression -> State -> Float
 eval expr state =
     case expr of
