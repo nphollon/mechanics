@@ -9,13 +9,13 @@ module Expression (num, time, coordinate, velocity, negative, plus, minus, times
 @docs num, time, coordinate, velocity
 
 # Expression arithmetic
-@docs sum, plus, minus, product, times, over, negate, inverse, square, expt, sine, cosine, ln
+@docs sum, plus, minus, product, times, over, negative, inverse, square, expt, sine, cosine, ln
 
 # Inspecting expressions
 @docs dimension, getFloat, print
 
 # Taking derivatives
-@partial
+@docs partial
 -}
 
 import String
