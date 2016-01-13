@@ -11,6 +11,7 @@ all =
         "Symbolic expressions"
         [ suite "Simplifying expressions" simplifyTests
         , suite "Examining expressions" examineTests
+        , suite "Printing expressions" printTests
         , suite "Evaluating expressions" evalTests
         , suite "Partial differentiation" partialTests
         ]
@@ -115,6 +116,55 @@ examineTests =
         <| assertEqual
             3
             (dimension ((velocity 0) `times` (coordinate 2)))
+    ]
+
+
+printTests : List Test
+printTests =
+    [ test "constants are printed as floats"
+        <| assertEqual
+            "1.5"
+            (print (num 1.5))
+    , test "time is printed as t"
+        <| assertEqual
+            "t"
+            (print time)
+    , test "coordinate 1 is printed as x_1"
+        <| assertEqual
+            "x_1"
+            (print (coordinate 1))
+    , test "velocity 1 is printed as v_1"
+        <| assertEqual
+            "v_1"
+            (print (velocity 1))
+    , test "sine is printed in parens"
+        <| assertEqual
+            "(sin t)"
+            (print (sine time))
+    , test "cosine is printed in parens"
+        <| assertEqual
+            "(cos t)"
+            (print (cosine time))
+    , test "natural log is printed in parens"
+        <| assertEqual
+            "(ln t)"
+            (print (ln time))
+    , test "exponentiation is printed in parens with a caret"
+        <| assertEqual
+            "(x_0 ^ t)"
+            (print (expt (coordinate 0) time))
+    , test "sums are printed in parens with plusses interspersed"
+        <| assertEqual
+            "(3 + x_0 + x_1)"
+            (print (sum [ num 3, coordinate 0, coordinate 1 ]))
+    , test "products are printed in parens with factors separated by spaces"
+        <| assertEqual
+            "(3 x_0 x_1)"
+            (print (product [ num 3, coordinate 0, coordinate 1 ]))
+    , test "unit coefficient is not printed"
+        <| assertEqual
+            "(t x_0)"
+            (print (product [ num 1, time, coordinate 0 ]))
     ]
 
 

@@ -1,4 +1,4 @@
-module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, toString, partial, eval, Expression) where
+module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, print, partial, eval, Expression) where
 
 {-| Create symbolic mathematic expressions. For use with the `Lagrangian` module.
 
@@ -12,12 +12,13 @@ module Expression (num, time, coordinate, velocity, negative, plus, minus, times
 @docs sum, plus, minus, product, times, over, negate, inverse, square, expt, sine, cosine, ln
 
 # Inspecting expressions
-@docs dimension, getFloat, toString
+@docs dimension, getFloat, print
 
 # Taking derivatives
 @partial
 -}
 
+import String
 import Mechanics as Mech exposing (State)
 import Types exposing (Expression(..))
 
@@ -263,9 +264,50 @@ getFloat x =
             Nothing
 
 
-toString : Expression -> String
-toString _ =
-    ""
+print : Expression -> String
+print expression =
+    let
+        enclose str =
+            "(" ++ str ++ ")"
+
+        joinEnclose joiner items =
+            List.map print items
+                |> String.join joiner
+                |> enclose
+    in
+        case expression of
+            Const c ->
+                toString c
+
+            Time ->
+                "t"
+
+            Coord i ->
+                "x_" ++ (toString i)
+
+            Vel i ->
+                "v_" ++ (toString i)
+
+            Sum terms ->
+                joinEnclose " + " terms
+
+            Prod coeff factors ->
+                if coeff == 1 then
+                    joinEnclose " " factors
+                else
+                    joinEnclose " " (num coeff :: factors)
+
+            Pow x y ->
+                (print x) ++ " ^ " ++ (print y) |> enclose
+
+            Log x ->
+                "ln " ++ (print x) |> enclose
+
+            Sin x ->
+                "sin " ++ (print x) |> enclose
+
+            Cos x ->
+                "cos " ++ (print x) |> enclose
 
 
 partial : Expression -> Expression -> Expression
