@@ -1,10 +1,45 @@
 module Lagrangian (solve, toAcceleration) where
 
+{-|
+We can compute the behavior of a system if we start with special equation called
+a Lagrangian.
+
+    Lagrangian = KineticEnergy - PotentialEnergy
+
+@docs toAcceleration, solve
+-}
+
 import Expression exposing (..)
 import Mechanics
 import Types
 
 
+{-| Given a Lagrangian, try to compute the acceleration of the system. The result
+is a list of expressions describing the acceleration of each coordinate.
+
+This function will return `Nothing` if the expression it receives does not obey
+the following rules:
+
+* Every coordinate index must have a velocity-squared term.
+
+    -- Bad: The expression has (coordinate 1) but no (square (velocity 1))
+    (square (velocity 0)) `plus` (coordinate 0) `plus` (coordinate 1)
+
+    -- Good: Not every velocity needs a corresponding coordinate
+    sum [ square (velocity 0), square (velocity 1), square (velocity 2) ]
+
+    -- Bad: (square (velocity 3)) appears, but 1 and 2 are missing
+    sum [ square (velocity 0), square (velocity 3) ]
+
+
+* Velocities with different indexes can be added but not combined in other ways.
+
+    -- Bad: (velocity 0) and (velocity 1) are multiplied, not added
+    (square (velocity 0)) `times` (square (velocity 1))
+
+    -- Good: It is OK to multiply coordinates and velocities
+    (square (velocity 0)) `plus` ((coordinate 0) `times` (square (velocity 1)))
+-}
 solve : Expression -> Maybe (List Expression)
 solve lagr =
     let
@@ -102,6 +137,11 @@ dotProduct vector matrix =
             []
 
 
+
+{-| The same as `solve`, but wraps up the solution in a
+`Mechanics.Acceleration` value. The result can be plugged directly into
+`Mechanics.evolve`.
+-}
 toAcceleration : Expression -> Maybe Mechanics.Acceleration
 toAcceleration lagrangian =
     let
