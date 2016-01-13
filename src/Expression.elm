@@ -1,4 +1,22 @@
-module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, partial, eval, Expression) where
+module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, toString, partial, eval, Expression) where
+
+{-| Create symbolic mathematic expressions. For use with the `Lagrangian` module.
+
+# Using expressions
+@docs Expression, eval
+
+# Expression primitives
+@docs num, time, coordinate, velocity
+
+# Expression arithmetic
+@docs sum, plus, minus, product, times, over, negate, inverse, square, expt, sine, cosine, ln
+
+# Inspecting expressions
+@docs dimension, getFloat, toString
+
+# Taking derivatives
+@partial
+-}
 
 import Mechanics as Mech exposing (State)
 import Types exposing (Expression(..))
@@ -243,6 +261,11 @@ getFloat x =
 
         _ ->
             Nothing
+
+
+toString : Expression -> String
+toString _ =
+    ""
 
 
 partial : Expression -> Expression -> Expression
