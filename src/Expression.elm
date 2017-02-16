@@ -1,4 +1,4 @@
-module Expression (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, print, partial, eval, Expression) where
+module Expression exposing (num, time, coordinate, velocity, negative, plus, minus, times, over, sum, product, square, inverse, expt, sine, cosine, ln, dimension, getFloat, print, partial, eval, Expression)
 
 {-| Create symbolic mathematic expressions. For use with the `Lagrangian` module. The variable names are designed to correspond with the fields in `Mechanics.State`.
 
@@ -17,6 +17,8 @@ module Expression (num, time, coordinate, velocity, negative, plus, minus, times
 # Taking derivatives
 @docs partial
 -}
+
+-- TODO: infix syntax has been removed, so function names should be changed.
 
 import String
 import Mechanics as Mech exposing (State)
@@ -71,14 +73,14 @@ velocity i =
 -}
 negative : Expression -> Expression
 negative x =
-    (num -1) `times` x
+    times (num -1) x
 
 
 {-| Add two expressions.
 
-    print ((num 3) `plus` (num 4)) == "7"
-    print ((num 3) `plus` (velocity 2)) == "(3 + v_2)"
-    print ((coordinate 1) `plus` (num 0)) == "x_1"
+    print (plus (num 3) (num 4)) == "7"
+    print (plus (num 3) (velocity 2)) == "(3 + v_2)"
+    print (plus (coordinate 1) (num 0)) == "x_1"
 -}
 plus : Expression -> Expression -> Expression
 plus a b =
@@ -87,7 +89,7 @@ plus a b =
 
 {-| Subtract two expressions.
 
-    print ((num 3) `minus` time) == "(3 + (-1 t))"
+    print (minus (num 3) time) == "(3 + (-1 t))"
 -}
 minus : Expression -> Expression -> Expression
 minus a b =
@@ -102,7 +104,9 @@ sum : List Expression -> Expression
 sum terms =
     let
         findTerm query symbols =
-            List.partition (\symbol -> fst symbol == query) symbols
+            List.partition
+                (\symbol -> Tuple.first symbol == query)
+                symbols
 
         raiseCoeff term coeff symbols =
             case findTerm term symbols of
@@ -110,7 +114,7 @@ sum terms =
                     ( term, coeff ) :: s
 
                 ( r, s ) ->
-                    ( term, coeff + List.sum (List.map snd r) ) :: s
+                    ( term, coeff + List.sum (List.map Tuple.second r) ) :: s
 
         addTerm term ( const, symbols ) =
             case term of
@@ -148,10 +152,10 @@ sum terms =
 
 {-| Multiply two expressions.
 
-    print ((num 14) `times` (num 0.5)) == "7"
-    print ((num 2) `times` time) == "(2 t)"
-    print ((num 0) `times` time) == "0"
-    print ((num 1) `times` time) == "t"
+    print (times (num 14)  (num 0.5)) == "7"
+    print (times (num 2)  time) == "(2 t)"
+    print (times (num 0)  time) == "0"
+    print (times (num 1)  time) == "t"
 -}
 times : Expression -> Expression -> Expression
 times a b =
@@ -160,11 +164,11 @@ times a b =
 
 {-| Divide two expressions.
 
-    print ((num 2) `over` time) == "(2 (t ^ -1))"
+    print (over (num 2) time) == "(2 (t ^ -1))"
 -}
 over : Expression -> Expression -> Expression
 over a b =
-    product [ a, b `expt` (num -1) ]
+    product [ a, expt b (num -1) ]
 
 
 {-| Multiply a list of factors.
@@ -175,7 +179,9 @@ product : List Expression -> Expression
 product factors =
     let
         findFactor query symbols =
-            List.partition (\symbol -> fst symbol == query) symbols
+            List.partition
+                (\symbol -> Tuple.first symbol == query)
+                symbols
 
         raisePower base power symbols =
             case findFactor base symbols of
@@ -183,7 +189,7 @@ product factors =
                     ( base, power ) :: s
 
                 ( r, s ) ->
-                    ( base, sum (power :: (List.map snd r)) ) :: s
+                    ( base, sum (power :: (List.map Tuple.second r)) ) :: s
 
         addFactor factor ( const, symbols ) =
             case factor of
@@ -225,7 +231,7 @@ product factors =
 -}
 square : Expression -> Expression
 square base =
-    base `expt` (num 2)
+    expt base (num 2)
 
 
 {-| Raise an expression to the power of -1.
@@ -234,7 +240,7 @@ square base =
 -}
 inverse : Expression -> Expression
 inverse x =
-    x `expt` (num -1)
+    expt x (num -1)
 
 
 {-| Raise the first expression to the power of the second expression.
@@ -261,7 +267,7 @@ expt base power =
             List.map (flip expt power) (num coeff :: factors) |> product
 
         ( Pow subbase subpower, _ ) ->
-            expt subbase (subpower `times` power)
+            expt subbase (times subpower power)
 
         ( _, _ ) ->
             Pow base power
@@ -416,7 +422,8 @@ print expression =
 partial : Expression -> Expression -> Expression
 partial variable function =
     let
-        recurse = partial variable
+        recurse =
+            partial variable
     in
         if function == variable then
             num 1
@@ -448,7 +455,7 @@ partial variable function =
                     sum
                         [ product
                             [ power
-                            , expt base (power `minus` (num 1))
+                            , expt base (minus power (num 1))
                             , partial variable base
                             ]
                         , product
@@ -459,13 +466,13 @@ partial variable function =
                         ]
 
                 Sin u ->
-                    (cosine u) `times` (recurse u)
+                    times (cosine u) (recurse u)
 
                 Cos u ->
-                    (negative (sine u)) `times` (recurse u)
+                    times (negative (sine u)) (recurse u)
 
                 Log u ->
-                    (expt u (num -1)) `times` (recurse u)
+                    times (expt u (num -1)) (recurse u)
 
 
 {-| Evaluate an expression, replacing the variables in the expression with the

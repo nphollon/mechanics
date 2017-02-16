@@ -1,4 +1,4 @@
-module Mechanics (State, Acceleration, state1, state2, state3, state, aboutEqual, dimension, time, coordinate, velocity, evolve, acceleration) where
+module Mechanics exposing (State, Acceleration, state1, state2, state3, state, aboutEqual, dimension, time, coordinate, velocity, evolve, acceleration)
 
 {-|
 # Building states
@@ -46,8 +46,8 @@ type State
 state : Float -> List ( Float, Float ) -> State
 state time coords =
     { time = time
-    , coordinates = List.map fst coords
-    , velocities = List.map snd coords
+    , coordinates = List.map Tuple.first coords
+    , velocities = List.map Tuple.second coords
     }
         |> Data
 
@@ -218,13 +218,17 @@ your eyes!
 evolve : Acceleration -> Float -> State -> State
 evolve accel dt state =
     let
-        a = stateDerivative accel state
+        a =
+            stateDerivative accel state
 
-        b = nudge (0.5 * dt) a state |> stateDerivative accel
+        b =
+            nudge (0.5 * dt) a state |> stateDerivative accel
 
-        c = nudge (0.5 * dt) b state |> stateDerivative accel
+        c =
+            nudge (0.5 * dt) b state |> stateDerivative accel
 
-        d = nudge dt c state |> stateDerivative accel
+        d =
+            nudge dt c state |> stateDerivative accel
     in
         state
             |> nudge (dt / 6) a

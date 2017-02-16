@@ -1,4 +1,4 @@
-module Lagrangian (solve, toAcceleration) where
+module Lagrangian exposing (solve, toAcceleration)
 
 {-|
 We can compute the behavior of a system if we start with special equation called
@@ -60,7 +60,8 @@ Below are examples of good and bad inputs:
 solve : Expression -> Maybe (List Expression)
 solve lagr =
     let
-        indexes = [0..(dimension lagr - 1)]
+        indexes =
+            List.range 0 (dimension lagr - 1)
 
         spaceTerm =
             List.map (\i -> partial (coordinate i) lagr) indexes
@@ -81,7 +82,7 @@ solve lagr =
             List.map velocity indexes
 
         speedTerm =
-            speedVector `dotProduct` spaceSpeedPartial
+            dotProduct speedVector spaceSpeedPartial
 
         accel =
             List.map4
@@ -89,7 +90,7 @@ solve lagr =
                     if (d2d2L == (num 0)) then
                         Nothing
                     else
-                        Just ((d1L `minus` d0d2L `minus` vd1d2L) `over` d2d2L)
+                        Just (over (minus (minus d1L d0d2L) vd1d2L) d2d2L)
                 )
                 spaceTerm
                 timeTerm

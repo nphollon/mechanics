@@ -1,4 +1,4 @@
-module Types (..) where
+module Types exposing (Expression(..))
 
 
 type Expression
